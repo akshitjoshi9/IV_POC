@@ -1,0 +1,1 @@
+from .web_scrapping_task import web_scrapping_task

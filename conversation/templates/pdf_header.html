@@ -1,0 +1,26 @@
+<header>
+   <div style="display:flex; justify-content:space-between; align-items:center; margin:0; padding:10px 0; line-height:1.1; background-color:#fff; width:100%;">
+       <div style="font-size:20pt; font-weight:bold; color:#004aad; margin:0; padding:0; line-height:1;">
+           IntuVigilance AI Solution
+       </div>
+       <div style="margin:0; padding:0; line-height:1;">
+           <img src="file://{{ logo_path }}" width="90" height="32" style="display:block; margin:0; padding:0; vertical-align:top;" />
+       </div>
+   </div>
+
+   <div style="height:2.5px; background-color:#0070C0; margin:0; width:100%;"></div>
+
+   <div style="font-size:11pt; color:#000; line-height:1.2; padding:6px 0;">
+       <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+           <div><b>Date & Time of Export:</b> {{ last_updated }}</div>
+           <div><b>Country:</b> {{ country }}</div>
+       </div>
+       <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+           <div><b>Module:</b> {{ category }}</div>
+           <div><b>Submodule:</b> {{ subcategory }}</div>
+       </div>
+       <div><b>Username:</b> {{ user_name }}</div>
+   </div>
+
+   <div style="height:2.5px; background-color:#0070C0; margin:0; width:100%;"></div>
+</header>

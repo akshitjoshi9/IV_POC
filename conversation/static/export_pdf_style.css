@@ -1,0 +1,115 @@
+@page {
+   size: A4;
+   margin: 180px 40px 50px 40px;
+   @top-center {
+       content: element(header);
+       margin: 0;
+   }
+   @bottom-center {
+       content: "Page " counter(page) " | Intuvigilance Ltd. | http://www.intuvigilance.com";
+       font-size: 9pt;
+       color: grey;
+   }
+}
+
+body {
+   font-family: Helvetica, Arial, sans-serif;
+   font-size: 10pt;
+   line-height: 1.4;
+   margin: 0;
+   padding: 0;
+}
+
+header {
+   position: running(header);
+   display: block;
+   min-width: 190mm;
+   overflow: hidden;
+   box-sizing: border-box;
+   padding: 0; 
+   margin: 0;
+}
+
+.question-block {
+   font-weight: bold;
+   color: #004aad;
+   margin-top: 20px;
+   margin-bottom: 2px;
+   page-break-inside: avoid;
+}
+
+ul {
+   list-style-type: disc;
+   margin-left: 15px;
+   padding-left: 0;
+}
+
+ol {
+   list-style-type: decimal;
+   margin-left: 15px;
+   padding-left: 0;
+}
+
+strong, b {
+   font-weight: bold;
+}
+
+em, i {
+   font-style: italic;
+}
+
+a {
+   color: blue;
+   text-decoration: underline;
+   word-break: break-word;
+   overflow-wrap: anywhere;
+   text-decoration-skip-ink: none;
+}
+
+code {
+   font-family: Courier, monospace;
+   background-color: #eeeeee;
+   padding: 2px 4px;
+   border-radius: 3px;
+}
+
+.assistant-block {
+    background-color: #f7f9fc;
+    border: 1px solid #d1d9e6;
+    border-radius: 8px;
+    padding: 10px 10px;
+    margin: 10px 0;
+    box-sizing: border-box;
+}
+
+.assistant-block a {
+    display: inline-block;
+    margin-top: 4px;
+    color: #004aad;
+    text-decoration: underline;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.sources {
+    margin-top: 8px;
+    font-size: 9pt;
+}
+
+.sources ul {
+    padding-left: 20px;  /* Controls left space from the block */
+    margin: 0;
+}
+
+.sources li {
+    margin-bottom: 2px;
+    line-height: 1.5;
+    list-style-position: inside; /* Ensures bullet is part of content flow */
+    vertical-align: middle;
+}
+
+.sources li a {
+    line-height: 1.2;
+    vertical-align: middle;
+    display: inline;   /* Ensure link stays inline with bullet */
+}
