@@ -1,8 +1,8 @@
 import re
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_milvus import Milvus
 from pymilvus import connections, utility
 from core.config import embedding
+from conversation.services.scrapping_service.hybrid_chunking import HybridChunker
 
 
 class EmbeddingVectorStore:
@@ -12,6 +12,7 @@ class EmbeddingVectorStore:
             host="localhost",
             port="19530"
         )
+        self.chunker = HybridChunker()
 
     def generate_collection_name(self, country, url):
         formatted_country = country.lower().replace(" ", "_")
@@ -22,9 +23,11 @@ class EmbeddingVectorStore:
 
     def embedding_service(self, documents):
         """This service uses a text splitter to chunk documents"""
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        docs = text_splitter.split_documents(documents)
-        return docs
+        if not documents:
+            return []
+
+        chunks = self.chunker.chunk(documents)
+        return chunks
 
     def vector_store_service(self, docs, collection_name):
         """Store vector data into Milvus vector DB"""
