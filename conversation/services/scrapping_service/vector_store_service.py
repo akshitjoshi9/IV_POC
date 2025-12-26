@@ -1,55 +1,121 @@
 import re
-from langchain_milvus import Milvus
-from pymilvus import connections, utility
+from typing import List
+from pymilvus import (
+    connections,
+    utility,
+    Collection,
+    FieldSchema,
+    CollectionSchema,
+    DataType,
+)
+from langchain.schema import Document
 from core.config import embedding
 from conversation.services.scrapping_service.hybrid_chunking import HybridChunker
+from conversation.services.scrapping_service.sparse_encoder import BM25SparseEncoder
 
 
 class EmbeddingVectorStore:
-    """ This class contains service for embedding model and vector DB creation """
+    """
+    Hybrid Embedding Vector Store
+    - Dense embeddings → Milvus HNSW index
+    - Sparse embeddings → stored in metadata (BM25)
+    """
+
     def __init__(self):
-        connections.connect(
-            host="localhost",
-            port="19530"
-        )
+        connections.connect(host="localhost", port="19530")
         self.chunker = HybridChunker()
 
-    def generate_collection_name(self, country, url):
+    def generate_collection_name(self, country: str, url: str) -> str:
         formatted_country = country.lower().replace(" ", "_")
-        safe_url = re.sub(r"[^a-zA-Z0-9_]", "_", url)
-        safe_url = safe_url[:200]
-        collection_name = f"{formatted_country}_{safe_url}"
-        return collection_name
+        safe_url = re.sub(r"[^a-zA-Z0-9_]", "_", url)[:200]
+        return f"{formatted_country}_{safe_url}"
 
-    def embedding_service(self, documents):
-        """This service uses a text splitter to chunk documents"""
+    def _prepare_embeddings(self, docs: List[Document]):
+        texts = [d.page_content for d in docs]
+
+        dense_vectors = embedding.embed_documents(texts)
+
+        sparse_encoder = BM25SparseEncoder(texts)
+        sparse_vectors = [sparse_encoder.encode(t) for t in texts]
+
+        return dense_vectors, sparse_vectors
+
+    def _create_collection(self, name: str, dim: int) -> Collection:
+        fields = [
+            FieldSchema(
+                name="id",
+                dtype=DataType.INT64,
+                is_primary=True,
+                auto_id=True,
+            ),
+            FieldSchema(
+                name="dense_vector",
+                dtype=DataType.FLOAT_VECTOR,
+                dim=dim,
+            ),
+            FieldSchema(
+                name="text",
+                dtype=DataType.VARCHAR,
+                max_length=65535,
+            ),
+            FieldSchema(
+                name="metadata",
+                dtype=DataType.JSON,
+            ),
+        ]
+
+        schema = CollectionSchema(
+            fields=fields,
+            description="Hybrid RAG Collection (Dense indexed, Sparse metadata)",
+        )
+
+        collection = Collection(name=name, schema=schema)
+
+        collection.create_index(
+            field_name="dense_vector",
+            index_params={
+                "index_type": "HNSW",
+                "metric_type": "COSINE",
+                "params": {"M": 16, "efConstruction": 200},
+            },
+        )
+
+        collection.load()
+        return collection
+
+    def embedding_vector_store_service(
+        self,
+        documents: List[Document],
+        country: str,
+        main_url: str,
+    ):
         if not documents:
-            return []
+            return None, None
 
-        chunks = self.chunker.chunk(documents)
-        return chunks
-
-    def vector_store_service(self, docs, collection_name):
-        """Store vector data into Milvus vector DB"""
-        if utility.has_collection(collection_name):
-            vectorstore = Milvus(
-                embedding_function=embedding,
-                collection_name=collection_name,
-                auto_id=True
-            )
-            vectorstore.add_documents(docs)
-            return vectorstore
-        else:
-            return Milvus.from_documents(
-                documents=docs,
-                embedding=embedding,
-                collection_name=collection_name,
-                auto_id=True
-            )
-
-    def embedding_vector_store_service(self, documents, country, main_url):
-        """Convert and store documents into vector DB"""
         collection_name = self.generate_collection_name(country, main_url)
-        docs = self.embedding_service(documents)
-        vectorstore = self.vector_store_service(docs, collection_name)
-        return vectorstore, collection_name
+        chunks = self.chunker.chunk(documents)
+        dense_vecs, sparse_vecs = self._prepare_embeddings(chunks)
+
+        if utility.has_collection(collection_name):
+            collection = Collection(collection_name)
+        else:
+            collection = self._create_collection(
+                collection_name, dim=len(dense_vecs[0])
+            )
+
+        collection.insert(
+            [
+                dense_vecs,
+                [c.page_content for c in chunks],
+                [
+                    {
+                        **c.metadata,
+                        "sparse_vector": sparse_vecs[i],
+                    }
+                    for i, c in enumerate(chunks)
+                ],
+            ]
+        )
+        collection.flush()
+        collection.load()
+        return collection, collection_name

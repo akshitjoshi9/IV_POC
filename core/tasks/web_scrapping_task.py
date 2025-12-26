@@ -9,7 +9,7 @@ from conversation.services import (
 
 SCRAPER_REGISTRY = {
     "https://www.legislation.gov.uk/uksi/2012/1916/data.xht?view=snippet&wrap=true": UKLegislationScraper,
-    "https://www.gov.uk/": GovUKScrapperService
+    # "https://www.gov.uk/": GovUKScrapperService
 }
 
 async def web_scrapping_task():
